@@ -21,15 +21,18 @@ class UVLoop(object):
         else:
             self._loop = pyuv.Loop()
         self._signal_checker = pyuv.Signal(self._loop)
-        signal.signal(signal.SIGINT, self._handle_sigint)
         self._handles = set()
+        try:
+            signal.signal(signal.SIGINT, self._handle_sigint)
+        except ValueError:
+            # TODO: signal handlers cannot be added from a thread other than Main
+            pass
 
     def destroy(self):
         self._signal_checker = None
         self._loop = None
 
     def _handle_sigint(self, signum, frame):
-        # TODO: signal handler cannot be added from a thread other than Main
         self.handle_error(None, Exception, 'SIGINT received', None)
 
     def _handle_syserr(self, message, errno):
