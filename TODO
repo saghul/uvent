@@ -1,0 +1,6 @@
+
+- Stop loop in case of error
+- Format repr
+- Implement a pycares based resolver
+- Use pyuv's ThreadPool
+
