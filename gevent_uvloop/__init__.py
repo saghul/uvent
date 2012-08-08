@@ -388,7 +388,6 @@ class Io(Watcher):
                 self.stop()
 
     def start(self, callback, *args, **kw):
-        pass_events = kw.get('pass_events', False)    # TODO
         super(Io, self).start(callback, *args)
         self._handle.start(self._events, self._poll_cb)
         if not self._ref:
