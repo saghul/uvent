@@ -21,6 +21,7 @@ class UVLoop(object):
         else:
             self._loop = pyuv.Loop()
         self._signal_checker = pyuv.Signal(self._loop)
+        self._ticker = Ticker(self)
         self._handles = set()
         try:
             signal.signal(signal.SIGINT, self._handle_sigint)
@@ -29,6 +30,8 @@ class UVLoop(object):
             pass
 
     def destroy(self):
+        self._handles.clear()
+        self._ticker = None
         self._signal_checker = None
         self._loop = None
 
@@ -164,6 +167,20 @@ class UVLoop(object):
         raise NotImplementedError
 
 
+class Ticker(object):
+
+    def __init__(self, loop):
+        self._handle = pyuv.Idle(loop._loop)
+
+    def _cb(self, handle):
+        self._handle.stop()
+
+    def tick(self):
+        if not self._handle.active:
+            self._handle.start(self._cb)
+            self._handle.unref()
+
+
 class Watcher(object):
 
     @property
@@ -230,7 +247,7 @@ class Callback(Watcher):
         self.loop = loop
         self._ref = ref
         self._callback = None
-        self._handle = pyuv.Idle(self.loop._loop)
+        self._handle = pyuv.Prepare(self.loop._loop)
 
     def _cb(self, handle):
         try:
@@ -242,6 +259,7 @@ class Callback(Watcher):
 
     def start(self, callback, *args):
         super(Callback, self).start(callback, *args)
+        self.loop._ticker.tick()
         self._handle.start(self._cb)
         if not self._ref:
             self._handle.unref()
