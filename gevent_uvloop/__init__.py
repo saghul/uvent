@@ -36,7 +36,7 @@ class UVLoop(object):
         self._loop = None
 
     def _handle_sigint(self, signum, frame):
-        self.handle_error(None, Exception, 'SIGINT received', None)
+        self.handle_error(None, SystemExit, 1, None)
 
     def _handle_syserr(self, message, errno):
         self.handle_error(None, SystemError, SystemError(message + ': ' + os.strerror(errno)), None)
