@@ -471,11 +471,10 @@ class Async(Watcher):
 # Patchers
 
 def patch_sleep():
-    from gevent.hub import get_hub
     import gevent
     import gevent.hub
     def sleep(seconds=0, ref=True):
-        hub = get_hub()
+        hub = gevent.hub.get_hub()
         loop = hub.loop
         watcher = loop.timer(max(seconds, 0), ref=ref)
         hub.wait(watcher)
