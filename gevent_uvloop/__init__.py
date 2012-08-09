@@ -1,6 +1,6 @@
 # coding=utf8
 
-# Copyright (C) 2011 Saúl Ibarra Corretgé <saghul@gmail.com>
+# Copyright (C) 2012 Saúl Ibarra Corretgé <saghul@gmail.com>
 #
 
 __all__ = ['install']
