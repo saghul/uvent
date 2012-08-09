@@ -3,7 +3,7 @@
 # Copyright (C) 2011 Saúl Ibarra Corretgé <saghul@gmail.com>
 #
 
-__all__ = ['UVLoop', 'sleep']
+__all__ = ['UVLoop']
 
 import functools
 import pyuv
