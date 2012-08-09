@@ -450,9 +450,32 @@ class Async(Watcher):
         self._handle.send()
 
 
-def install():
+# Patchers
+
+def patch_sleep():
+    from gevent.hub import get_hub
+    import gevent
+    import gevent.hub
+    def sleep(seconds=0, ref=True):
+        hub = get_hub()
+        loop = hub.loop
+        watcher = loop.timer(max(seconds, 0), ref=ref)
+        hub.wait(watcher)
+    gevent.sleep = sleep
+    gevent.hub.sleep = sleep
+
+def patch_loop():
+    from gevent.hub import Hub
+    Hub.loop_class = UVLoop
+
+def patch_dns():
     from gevent.hub import Hub
     from gevent.resolver_thread import Resolver
-    Hub.loop_class = UVLoop
     Hub.resolver_class = Resolver
+
+
+def install():
+    patch_sleep()
+    patch_loop()
+    patch_dns()
 
