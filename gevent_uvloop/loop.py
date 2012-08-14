@@ -20,22 +20,17 @@ class UVLoop(object):
             self._loop = pyuv.Loop.default_loop()
         else:
             self._loop = pyuv.Loop()
-        self._signal_checker = pyuv.Signal(self._loop)
+        self._signal_watcher = pyuv.Signal(self._loop)
         self._ticker = Ticker(self)
         self._handles = set()
-        try:
-            signal.signal(signal.SIGINT, self._handle_sigint)
-        except ValueError:
-            # TODO: signal handlers cannot be added from a thread other than Main
-            pass
 
     def destroy(self):
         self._handles.clear()
         self._ticker = None
-        self._signal_checker = None
+        self._signal_watcher = None
         self._loop = None
 
-    def _handle_sigint(self, signum, frame):
+    def _handle_sigint(self, handle, signum):
         self.handle_error(None, SystemExit, 1, None)
 
     def _handle_syserr(self, message, errno):
@@ -58,8 +53,10 @@ class UVLoop(object):
     def run(self, nowait=False, once=False):
         if nowait:
             raise RuntimeError('nowait is not supported')
-        self._signal_checker.start()
-        self._signal_checker.unref()
+        if self._loop.default:
+            self._signal_watcher.start(self._handle_sigint, signal.SIGINT)
+            self._signal_watcher.unref()
+            # TODO: signals are only supported in the default loop in libuv for now
         if once:
             self._loop.run_once()
         else:
