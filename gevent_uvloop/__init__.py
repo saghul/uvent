@@ -23,14 +23,17 @@ def patch_loop():
     from gevent.hub import Hub
     Hub.loop_class = UVLoop
 
-def patch_dns():
+def patch_dns(use_custom_resolver):
     from gevent.hub import Hub
-    from gevent.resolver_thread import Resolver
+    if use_custom_resolver:
+        from .resolver import Resolver
+    else:
+        from gevent.resolver_thread import Resolver
     Hub.resolver_class = Resolver
 
 
-def install():
+def install(dns=True):
     patch_sleep()
     patch_loop()
-    patch_dns()
+    patch_dns(dns)
 
