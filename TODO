@@ -1,6 +1,6 @@
 
 - Stop loop in case of error
-- Format repr
-- Implement a pycares based resolver
+- Format repr (loop and watchers)
 - Use pyuv's ThreadPool
+- Create a fileobject alternative with pyuv.fs
 
