@@ -24,9 +24,11 @@ class Resolver(object):
                       (getattr(socket, 'NI_NAMEREQD',    8), pycares.ARES_NI_NAMEREQD),
                       (getattr(socket, 'NI_DGRAM',      16), pycares.ARES_NI_DGRAM)]
 
-    _ares_errno_map = {pycares.errno.ARES_ENOTFOUND: (8, 'nodename nor servname provided, or not known'),
-                       pycares.errno.ARES_ENODATA: (8, 'nodename nor servname provided, or not known')}
-    _addrinfo_errno_map = {pyuv.errno.UV_ENOENT: (8, 'nodename nor servname provided, or not known')}
+    _ares_errno_map = {pycares.errno.ARES_ENOTFOUND: (socket.gaierror, (8, 'nodename nor servname provided, or not known')),
+                       pycares.errno.ARES_ENODATA: (socket.gaierror, (8, 'nodename nor servname provided, or not known'))}
+    _ares_errno_map2 = {pycares.errno.ARES_ENOTFOUND: (socket.herror, (1, 'Unknown host')),
+                        pycares.errno.ARES_ENODATA: (socket.gaierror, (8, 'nodename nor servname provided, or not known'))}
+    _addrinfo_errno_map = {pyuv.errno.UV_ENOENT: (socket.gaierror, (8, 'nodename nor servname provided, or not known'))}
 
     def __init__(self, hub=None):
         self.hub = hub or get_hub()
@@ -79,15 +81,37 @@ class Resolver(object):
 
     def _ares_cb(self, cb, result, error):
         if error is not None:
-            error_data = self._ares_errno_map.get(error, (error, pycares.errno.strerror(error)))
-            cb(Result(None, socket.gaierror(*error_data)))
+            error_data = self._ares_errno_map.get(error)
+            if not error_data:
+                exc = socket.gaierror(error, pycares.errno.strerror(error))
+            else:
+                klass, args = error_data
+                exc = klass(*args)
+            cb(Result(None, exc))
+        else:
+            cb(Result(result, None))
+
+    def _ares_cb2(self, cb, result, error):
+        if error is not None:
+            error_data = self._ares_errno_map2.get(error)
+            if not error_data:
+                exc = socket.gaierror(error, pycares.errno.strerror(error))
+            else:
+                klass, args = error_data
+                exc = klass(*args)
+            cb(Result(None, exc))
         else:
             cb(Result(result, None))
 
     def _addrinfo_cb(self, cb, result, error):
         if error is not None:
-            error_data = self._addrinfo_errno_map.get(error, (error, pyuv.errno.strerror(error)))
-            cb(Result(None, socket.gaierror(*error_data)))
+            error_data = self._addrinfo_errno_map.get(error)
+            if not error_data:
+                exc = socket.gaierror(error, pycares.errno.strerror(error))
+            else:
+                klass, args = error_data
+                exc = klass(*args)
+            cb(Result(None, exc))
         else:
             cb(Result(result, None))
 
@@ -111,7 +135,7 @@ class Resolver(object):
 
     def gethostbyaddr(self, ip_address):
         waiter = Waiter(self.hub)
-        cb = partial(self._ares_cb, waiter)
+        cb = partial(self._ares_cb2, waiter)
         try:
             self._channel.gethostbyaddr(ip_address, cb)
         except ValueError:
