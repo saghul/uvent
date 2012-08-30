@@ -32,7 +32,7 @@ def patch_dns(use_custom_resolver):
     Hub.resolver_class = Resolver
 
 
-def install(dns=True):
+def install(dns=False):
     patch_sleep()
     patch_loop()
     patch_dns(dns)
