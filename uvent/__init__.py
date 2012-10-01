@@ -18,22 +18,17 @@ def patch_sleep():
     gevent.sleep = sleep
     gevent.hub.sleep = sleep
 
+
 def patch_loop():
     from .loop import UVLoop
     from gevent.hub import Hub
+    from gevent.resolver_thread import Resolver
     Hub.loop_class = UVLoop
-
-def patch_dns(use_custom_resolver):
-    from gevent.hub import Hub
-    if use_custom_resolver:
-        from .resolver import Resolver
-    else:
-        from gevent.resolver_thread import Resolver
+    # The c-ares based loop cannot be used for the moment
     Hub.resolver_class = Resolver
 
 
-def install(dns=False):
+def install():
     patch_sleep()
     patch_loop()
-    patch_dns(dns)
 
