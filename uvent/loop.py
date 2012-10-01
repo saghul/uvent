@@ -46,7 +46,13 @@ class UVLoop(object):
     def _default_handle_error(self, context, type, value, tb):
         import traceback
         traceback.print_exception(type, value, tb)
-        # TODO: break loop
+        # TODO: replace with loop.break when available
+        def cb(handle):
+            try:
+                handle.close()
+            except Exception:
+                pass
+        self._loop.walk(cb)
 
     def run(self, nowait=False, once=False):
         self._signal_checker.start()
