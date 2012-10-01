@@ -20,18 +20,16 @@ class UVLoop(object):
             self._loop = pyuv.Loop.default_loop()
         else:
             self._loop = pyuv.Loop()
-        self._signal_watcher = pyuv.Signal(self._loop)
+        self._loop.excepthook = functools.partial(self.handle_error, None)
         self._ticker = Ticker(self)
         self._handles = set()
+        self._signal_checker = pyuv.SignalChecker(self._loop)
 
     def destroy(self):
         self._handles.clear()
         self._ticker = None
-        self._signal_watcher = None
+        self._signal_checker = None
         self._loop = None
-
-    def _handle_sigint(self, handle, signum):
-        self.handle_error(None, SystemExit, 1, None)
 
     def _handle_syserr(self, message, errno):
         self.handle_error(None, SystemError, SystemError(message + ': ' + os.strerror(errno)), None)
@@ -48,15 +46,13 @@ class UVLoop(object):
     def _default_handle_error(self, context, type, value, tb):
         import traceback
         traceback.print_exception(type, value, tb)
-        # TODO: stop loop
+        # TODO: break loop
 
     def run(self, nowait=False, once=False):
+        self._signal_checker.start()
+        self._signal_checker.unref()
         if nowait:
             raise RuntimeError('nowait is not supported')
-        if self._loop.default:
-            self._signal_watcher.start(self._handle_sigint, signal.SIGINT)
-            self._signal_watcher.unref()
-            # TODO: signals are only supported in the default loop in libuv for now
         if once:
             self._loop.run_once()
         else:
