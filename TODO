@@ -1,6 +1,4 @@
 
-- Stop loop in case of error
 - Format repr (loop and watchers)
-- Use pyuv's ThreadPool
 - Create a fileobject alternative with pyuv.fs
 
