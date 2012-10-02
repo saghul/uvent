@@ -6,6 +6,7 @@
 __all__ = ['UVLoop']
 
 import functools
+import os
 import pyuv
 import signal
 import sys
