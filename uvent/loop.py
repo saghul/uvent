@@ -23,12 +23,15 @@ class UVLoop(object):
             self._loop = pyuv.Loop()
         self._loop.excepthook = functools.partial(self.handle_error, None)
         self._ticker = Ticker(self)
+        self._child_watchers = {}
         self._watchers = set()
+        self._sigchld_handle = None
         self._signal_checker = pyuv.SignalChecker(self._loop)
 
     def destroy(self):
         self._watchers.clear()
         self._ticker = None
+        self._sigchld_handle = None
         self._signal_checker = None
         self._loop = None
 
@@ -146,11 +149,17 @@ class UVLoop(object):
     def fork(self, ref=True, priority=None):
         return NoOp(self, ref)
 
-    def child(self, pid, trace=0, ref=True):
-        raise NotImplementedError
+    def child(self, pid, trace=False, ref=True):
+        if sys.platform == 'win32':
+            raise NotImplementedError
+        return Child(self, pid, ref)
 
     def install_sigchld(self):
-        raise NotImplementedError
+        if sys.platform == 'win32':
+            raise NotImplementedError
+        if self._loop.default and self._sigchld_handle is None:
+            self._sigchld_handle = pyuv.Signal(self._loop)
+            self._sigchld_handle.start(self._handle_SIGCHLD, signal.SIGCHLD)
 
     def signal(self, signum, ref=True, priority=None):
         raise NotImplementedError
@@ -165,6 +174,12 @@ class UVLoop(object):
 
     def fileno(self):
         raise NotImplementedError
+
+    def _handle_SIGCHLD(self, handle, signum):
+        pid, status, usage = os.wait3(os.WNOHANG)
+        child = self._child_watchers.get(pid, None) or self._child_watchers.get(0, None)
+        if child is not None:
+            child._set_status(status)
 
 
 class Ticker(object):
@@ -484,5 +499,43 @@ class Async(Watcher):
         super(Async, self).stop()
 
     def send(self):
+        self._handle.send()
+
+
+class Child(Watcher):
+
+    def __init__(self, loop, pid, ref=True):
+        if not loop.default:
+            raise TypeError("child watchers are only allowed in the default loop")
+        loop.install_sigchld()
+        self.loop = loop
+        self._ref = ref
+        self._callback = None
+        self._handle = pyuv.Async(self.loop._loop, self._async_cb)
+        self._pid = pid
+        self.rpid = None
+        self.rstatus = None
+
+    @property
+    def pid(self):
+        return self._pid
+
+    def _async_cb(self, handle):
+        self._run_callback()
+
+    def start(self, callback, *args, **kw):
+        super(Child, self).start(callback, *args)
+        if not self._ref:
+            self._handle.unref()
+        # TODO: should someone be able to register 2 child watchers for the same PID?
+        self.loop._child_watchers[self._pid] = self
+
+    def stop(self):
+        del self.loop._child_watchers[self._pid]
+        super(Child, self).stop()
+
+    def _set_status(self, status):
+        self.rstatus = status
+        self.rpid = os.getpid()
         self._handle.send()
 
