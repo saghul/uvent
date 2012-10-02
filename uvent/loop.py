@@ -199,7 +199,7 @@ class Watcher(object):
     def _set_ref(self, value):
         self._ref = value
         if self._handle:
-            op = self._handle._ref if value else self._handle.unref
+            op = self._handle.ref if value else self._handle.unref
             op()
     ref = property(_get_ref, _set_ref)
     del _get_ref, _set_ref
