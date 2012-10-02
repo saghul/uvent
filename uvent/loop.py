@@ -22,11 +22,11 @@ class UVLoop(object):
             self._loop = pyuv.Loop()
         self._loop.excepthook = functools.partial(self.handle_error, None)
         self._ticker = Ticker(self)
-        self._handles = set()
+        self._watchers = set()
         self._signal_checker = pyuv.SignalChecker(self._loop)
 
     def destroy(self):
-        self._handles.clear()
+        self._watchers.clear()
         self._ticker = None
         self._signal_checker = None
         self._loop = None
@@ -111,7 +111,7 @@ class UVLoop(object):
 
     @property
     def activecnt(self):
-        return self._loop.active_handles
+        return self._loop.activ._watchers
 
     @property
     def origflags(self):
@@ -205,11 +205,11 @@ class Watcher(object):
     del _get_ref, _set_ref
 
     def start(self, callback, *args):
-        self.loop._handles.add(self)
+        self.loop._watchers.add(self)
         self._callback = functools.partial(callback, *args)
 
     def stop(self):
-        self.loop._handles.discard(self)
+        self.loop._watchers.discard(self)
         self._callback = None
 
     def feed(self, revents, callback, *args):
@@ -317,7 +317,7 @@ class Timer(Watcher):
     def again(self, callback, *args, **kw):
         if not self._handle:
             raise RuntimeError('timer not started')
-        self.loop._handles.add(self)
+        self.loop._watchers.add(self)
         self._callback = functools.partial(callback, *args)
         if kw.get('update', True):
             self.loop.update()
