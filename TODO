@@ -1,4 +1,6 @@
 
+- Implement signal watcher
+- Implement stat watcher
 - Format repr (loop and watchers)
 - Create a fileobject alternative with pyuv.fs
 
