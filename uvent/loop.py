@@ -246,7 +246,8 @@ class Callback(Watcher):
         self.loop = loop
         self._ref = ref
         self._callback = None
-        self._handle = pyuv.Prepare(self.loop._loop)
+        self._prepare_handle = pyuv.Prepare(self.loop._loop)
+        self._check_handle = pyuv.Check(self.loop._loop)
 
     def _cb(self, handle):
         try:
@@ -256,15 +257,33 @@ class Callback(Watcher):
         finally:
             self.stop()
 
+    def _get_ref(self):
+        return self._ref
+    def _set_ref(self, value):
+        self._ref = value
+        for handle in (self._prepare_handle, self._check_handle):
+            if handle:
+                op = handle.ref if value else handle.unref
+                op()
+    ref = property(_get_ref, _set_ref)
+    del _get_ref, _set_ref
+
+    @property
+    def active(self):
+        return (self._prepare_handle and self._prepare_handle.active) or (self._check_handle and self._check_handle.active)
+
     def start(self, callback, *args):
         super(Callback, self).start(callback, *args)
         self.loop._ticker.tick()
-        self._handle.start(self._cb)
+        self._prepare_handle.start(self._cb)
+        self._check_handle.start(self._cb)
         if not self._ref:
-            self._handle.unref()
+            self._prepare_handle.unref()
+            self._check_handle.unref()
 
     def stop(self):
-        self._handle.stop()
+        self._prepare_handle.stop()
+        self._check_handle.stop()
         super(Callback, self).stop()
 
 
