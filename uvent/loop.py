@@ -162,7 +162,7 @@ class UVLoop(object):
             self._sigchld_handle.start(self._handle_SIGCHLD, signal.SIGCHLD)
 
     def signal(self, signum, ref=True, priority=None):
-        raise NotImplementedError
+        return Signal(self, signum, ref)
 
     def callback(self, priority=None):
         return Callback(self)
@@ -538,4 +538,30 @@ class Child(Watcher):
         self.rstatus = status
         self.rpid = os.getpid()
         self._handle.send()
+
+
+class Signal(Watcher):
+
+    def __init__(self, loop, signum, ref):
+        if not loop.default:
+            raise NotImplementedError
+        self.loop = loop
+        self._ref = ref
+        self._callback = None
+        self._signum = signum
+        self._handle = pyuv.Signal(self.loop._loop)
+
+    def _signal_cb(self, handle, signum):
+        self._run_callback()
+
+    def start(self, callback, *args):
+        super(Signal, self).start(callback, *args)
+        self._handle.start(self._signal_cb, self._signum)
+        if not self._ref:
+            self._handle.unref()
+
+    def stop(self):
+        self._handle.stop()
+        super(Signal, self).stop()
+
 
