@@ -181,6 +181,15 @@ class UVLoop(object):
         if child is not None:
             child._set_status(status)
 
+    def _format(self):
+        msg = ''
+        if self.default:
+            msg += ' default'
+        return msg
+
+    def __repr__(self):
+        return '<%s at 0x%x%s>' % (self.__class__.__name__, id(self), self._format())
+
 
 class Ticker(object):
 
@@ -245,6 +254,19 @@ class Watcher(object):
             finally:
                 if not self.active:
                     self.stop()
+
+    def _format(self):
+        return ''
+
+    def __repr__(self):
+        result = '<%s at 0x%x%s' % (self.__class__.__name__, id(self), self._format())
+        if self.active:
+            result += ' active'
+        if self.pending:
+            result += ' pending'
+        if self.callback is not None:
+            result += ' callback=%r' % self.callback
+        return result + '>'
 
 
 class NoOp(Watcher):
@@ -470,6 +492,9 @@ class Io(Watcher):
             r.append('UV_WRITABLE')
         return '|'.join(r)
 
+    def _format(self):
+        return ' fd=%s events=%s' % (self.fd, self.events_str)
+
 
 class Async(Watcher):
 
@@ -526,6 +551,9 @@ class Child(Watcher):
         self.rstatus = status
         self.rpid = os.getpid()
         self._handle.send()
+
+    def _format(self):
+        return ' pid=%r rstatus=%r' % (self.pid, self.rstatus)
 
 
 class Signal(Watcher):
