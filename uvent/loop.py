@@ -198,6 +198,11 @@ class Ticker(object):
 
 class Watcher(object):
 
+    def __init__(self, loop, ref=True):
+        self.loop = loop
+        self._ref = ref
+        self._callback = None
+
     @property
     def callback(self):
         return self._callback
@@ -245,8 +250,7 @@ class Watcher(object):
 class NoOp(Watcher):
 
     def __init__(self, loop, ref=True):
-        self._ref = ref
-        self._callback = None
+        super(self, NoOp).__init__(loop, ref)
         self._handle = None
 
     def start(self, *args, **kw):
@@ -259,9 +263,7 @@ class NoOp(Watcher):
 class Callback(Watcher):
 
     def __init__(self, loop, ref=True):
-        self.loop = loop
-        self._ref = ref
-        self._callback = None
+        super(Callback, self).__init__(loop, ref)
         self._prepare_handle = pyuv.Prepare(self.loop._loop)
         self._check_handle = pyuv.Check(self.loop._loop)
 
@@ -308,11 +310,9 @@ class Timer(Watcher):
     def __init__(self, loop, after=0.0, repeat=0.0, ref=True):
         if repeat < 0.0:
             raise ValueError("repeat must be positive or zero: %r" % repeat)
-        self.loop = loop
+        super(Timer, self).__init__(loop, ref)
         self._after = after
         self._repeat = repeat
-        self._ref = ref
-        self._callback = None
         self._handle = pyuv.Timer(self.loop._loop)
 
     def _timer_cb(self, handle):
@@ -347,9 +347,7 @@ class Timer(Watcher):
 class Prepare(Watcher):
 
     def __init__(self, loop, ref=True):
-        self.loop = loop
-        self._ref = ref
-        self._callback = None
+        super(Prepare, self).__init__(loop, ref)
         self._handle = pyuv.Prepare(self.loop._loop)
 
     def _prepare_cb(self, handle):
@@ -369,9 +367,7 @@ class Prepare(Watcher):
 class Idle(Watcher):
 
     def __init__(self, loop, ref=True):
-        self.loop = loop
-        self._ref = ref
-        self._callback = None
+        super(Idle, self).__init__(loop, ref)
         self._handle = pyuv.Idle(self.loop._loop)
 
     def _idle_cb(self, handle):
@@ -391,9 +387,7 @@ class Idle(Watcher):
 class Check(Watcher):
 
     def __init__(self, loop, ref=True):
-        self.loop = loop
-        self._ref = ref
-        self._callback = None
+        super(Check, self).__init__(loop, ref)
         self._handle = pyuv.Check(self.loop._loop)
 
     def _check_cb(self, handle):
@@ -413,11 +407,9 @@ class Check(Watcher):
 class Io(Watcher):
 
     def __init__(self, loop, fd, events, ref=True):
-        self.loop = loop
-        self._ref = ref
+        super(Io, self).__init__(loop, ref)
         self._fd = fd
         self._events = self._ev2uv(events)
-        self._callback = None
         self._handle = pyuv.Poll(self.loop._loop, self._fd)
 
     @classmethod
@@ -482,9 +474,7 @@ class Io(Watcher):
 class Async(Watcher):
 
     def __init__(self, loop, ref=True):
-        self.loop = loop
-        self._ref = ref
-        self._callback = None
+        super(Async, self).__init__(loop, ref)
         self._handle = pyuv.Async(self.loop._loop, self._async_cb)
 
     def _async_cb(self, handle):
@@ -507,14 +497,12 @@ class Child(Watcher):
     def __init__(self, loop, pid, ref=True):
         if not loop.default:
             raise TypeError("child watchers are only allowed in the default loop")
+        super(Child, self).__init__(loop, ref)
         loop.install_sigchld()
-        self.loop = loop
-        self._ref = ref
-        self._callback = None
-        self._handle = pyuv.Async(self.loop._loop, self._async_cb)
         self._pid = pid
         self.rpid = None
         self.rstatus = None
+        self._handle = pyuv.Async(self.loop._loop, self._async_cb)
 
     @property
     def pid(self):
@@ -545,9 +533,7 @@ class Signal(Watcher):
     def __init__(self, loop, signum, ref):
         if not loop.default:
             raise NotImplementedError
-        self.loop = loop
-        self._ref = ref
-        self._callback = None
+        super(Signal, self).__init__(loop, ref)
         self._signum = signum
         self._handle = pyuv.Signal(self.loop._loop)
 
