@@ -63,7 +63,7 @@ class UVLoop(object):
             self._loop.run()
 
     def reinit(self):
-        raise NotImplementedError
+        pass
 
     def ref(self):
         raise NotImplementedError
