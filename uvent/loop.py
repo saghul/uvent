@@ -50,13 +50,7 @@ class UVLoop(object):
     def _default_handle_error(self, context, type, value, tb):
         import traceback
         traceback.print_exception(type, value, tb)
-        # TODO: replace with loop.break when available
-        def cb(handle):
-            try:
-                handle.close()
-            except Exception:
-                pass
-        self._loop.walk(cb)
+        self.break_(None)
 
     def run(self, nowait=False, once=False):
         self._signal_checker.start()
@@ -78,7 +72,13 @@ class UVLoop(object):
         raise NotImplementedError
 
     def break_(self, how):
-        raise NotImplementedError
+        # TODO: replace with uv_break when available
+        def cb(handle):
+            try:
+                handle.close()
+            except Exception:
+                pass
+        self._loop.walk(cb)
 
     def verify(self):
         pass
