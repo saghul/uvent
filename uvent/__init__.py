@@ -4,6 +4,7 @@
 #
 
 __all__ = ['install']
+__version__ = '0.1.0'
 
 
 # Patchers
