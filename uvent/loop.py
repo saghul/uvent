@@ -524,10 +524,15 @@ class Child(Watcher):
             raise TypeError("child watchers are only allowed in the default loop")
         super(Child, self).__init__(loop, ref)
         loop.install_sigchld()
+        self._active = False
         self._pid = pid
         self.rpid = None
         self.rstatus = None
         self._handle = pyuv.Async(self.loop._loop, self._async_cb)
+
+    @property
+    def active(self):
+        return self._active
 
     @property
     def pid(self):
@@ -540,11 +545,13 @@ class Child(Watcher):
         super(Child, self).start(callback, *args)
         if not self._ref:
             self._handle.unref()
+        self._active = True
         # TODO: should someone be able to register 2 child watchers for the same PID?
         self.loop._child_watchers[self._pid] = self
 
     def stop(self):
-        del self.loop._child_watchers[self._pid]
+        self._active = False
+        self.loop._child_watchers.pop(self._pid, None)
         super(Child, self).stop()
 
     def _set_status(self, status):
