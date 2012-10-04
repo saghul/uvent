@@ -2,9 +2,9 @@
 uvent: A gevent core implemented using libuv
 ============================================
 
-uvent is a gevent core implementation using the libuv library.
+uvent is a `gevent <http://gevent.org>`_ core implementation using the `libuv <https://github.com/joyent/libuv>`_ library.
 
-uvent uses pyuv, a Python interface for libuv. libuv is a high performance asynchronous
+uvent uses `pyuv <https://github.com/saghul/pyuv>`_, a Python interface for libuv. libuv is a high performance asynchronous
 networking library used as the platform layer for NodeJS.
 
 libuv provides the same core functionality as libev, with some really nice
