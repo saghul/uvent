@@ -115,7 +115,7 @@ class UVLoop(object):
 
     @property
     def activecnt(self):
-        return self._loop.activ._watchers
+        raise NotImplementedError
 
     @property
     def origflags(self):
