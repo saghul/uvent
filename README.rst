@@ -42,6 +42,9 @@ by installing them straight from GitHub:
     pip install git+https://github.com/saghul/pyuv.git
 
 
+**Note:** uvent only works with gevent >= 1.0, earlier versions are not supported.
+
+
 Using it
 ========
 
