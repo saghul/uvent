@@ -144,7 +144,7 @@ class UVLoop(object):
         return Async(self, ref)
 
     def stat(self, path, interval=0.0, ref=True, priority=None):
-        raise NotImplementedError
+        return Stat(self, path, interval, ref)
 
     def fork(self, ref=True, priority=None):
         return NoOp(self, ref)
@@ -584,5 +584,54 @@ class Signal(Watcher):
     def stop(self):
         self._handle.stop()
         super(Signal, self).stop()
+
+
+class Stat(Watcher):
+
+    def __init__(self, loop, path, interval, ref):
+        super(Stat, self).__init__(loop, ref)
+        self._path = path
+        self._interval = interval
+        self._attr = None
+        self._prev = None
+        self._handle = pyuv.fs.FSPoll(self.loop._loop)
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def interval(self):
+        return self._interval
+
+    @property
+    def attr(self):
+        if self._attr is not None and self._attr.st_nlink:
+            return self._attr
+        return None
+
+    @property
+    def prev(self):
+        if self._prev is not None and self._prev.st_nlink:
+            return self._prev
+        return None
+
+    def _fspoll_cb(self, handle, prev_stat, curr_stat, error):
+        if error is None:
+            self._prev = prev_stat
+            self._attr = curr_stat
+        else:
+            self._attr = None
+        self._run_callback()
+
+    def start(self, callback, *args):
+        super(Stat, self).start(callback, *args)
+        self._handle.start(self._path, self._fspoll_cb, self._interval)
+        if not self._ref:
+            self._handle.unref()
+
+    def stop(self):
+        self._handle.stop()
+        super(Stat, self).stop()
 
 
