@@ -54,7 +54,6 @@ class UVLoop(object):
 
     def run(self, nowait=False, once=False):
         self._signal_checker.start()
-        self._signal_checker.unref()
         if nowait:
             raise RuntimeError('nowait is not supported')
         if once:
