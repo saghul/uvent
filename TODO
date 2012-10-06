@@ -1,4 +1,4 @@
 
-- Implement stat watcher
 - Create a fileobject alternative with pyuv.fs
+- Use UDP and TCP handles in socket/ssl ?
 
