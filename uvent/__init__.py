@@ -25,7 +25,7 @@ def patch_loop():
     from gevent.hub import Hub
     from gevent.resolver_thread import Resolver
     Hub.loop_class = UVLoop
-    # The c-ares based loop cannot be used for the moment
+    # The c-ares based resolver cannot be used for the moment
     Hub.resolver_class = Resolver
 
 
