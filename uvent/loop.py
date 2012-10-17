@@ -565,8 +565,6 @@ class Child(Watcher):
 class Signal(Watcher):
 
     def __init__(self, loop, signum, ref):
-        if not loop.default:
-            raise NotImplementedError
         super(Signal, self).__init__(loop, ref)
         self._signum = signum
         self._handle = pyuv.Signal(self.loop._loop)
