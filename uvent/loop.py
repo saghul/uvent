@@ -22,7 +22,8 @@ class UVLoop(object):
         else:
             self._loop = pyuv.Loop()
         self._loop.excepthook = functools.partial(self.handle_error, None)
-        self._ticker = Ticker(self)
+        self._callback_watcher = pyuv.Prepare(self._loop)
+        self._callbacks = []
         self._child_watchers = {}
         self._watchers = set()
         self._sigchld_handle = None
@@ -30,7 +31,8 @@ class UVLoop(object):
 
     def destroy(self):
         self._watchers.clear()
-        self._ticker = None
+        self._callbacks = []
+        self._callback_watcher = None
         self._sigchld_handle = None
         self._signal_checker = None
         self._loop = None
@@ -163,16 +165,28 @@ class UVLoop(object):
     def signal(self, signum, ref=True, priority=None):
         return Signal(self, signum, ref)
 
-    def callback(self, priority=None):
-        return Callback(self)
-
-    def run_callback(self, func, *args, **kw):
-        result = Callback(self)
-        result.start(func, *args)
-        return result
+    def run_callback(self, func, *args):
+        cb = Callback(func, args)
+        self._callbacks.append(cb)
+        if not self._callback_watcher.active:
+            self._callback_watcher.start(self._run_callbacks)
+        return cb
 
     def fileno(self):
         raise NotImplementedError
+
+    def _run_callbacks(self, h):
+        while self._callbacks:
+            callbacks, self._callbacks = self._callbacks, []
+            for cb in callbacks:
+                if None in (cb.callback, cb.args):
+                    continue
+                try:
+                    cb.callback(*cb.args)
+                finally:
+                    cb.callback = None
+                    cb.args = None
+        self._callback_watcher.stop()
 
     def _handle_SIGCHLD(self, handle, signum):
         pid, status, usage = os.wait3(os.WNOHANG)
@@ -190,18 +204,44 @@ class UVLoop(object):
         return '<%s at 0x%x%s>' % (self.__class__.__name__, id(self), self._format())
 
 
-class Ticker(object):
+class Callback(object):
 
-    def __init__(self, loop):
-        self._handle = pyuv.Idle(loop._loop)
+    def __init__(self, callback, args):
+        self.callback = callback
+        self.args = args
 
-    def _cb(self, handle):
-        self._handle.stop()
+    @property
+    def pending(self):
+        return self.callback is not None
 
-    def tick(self):
-        if not self._handle.active:
-            self._handle.start(self._cb)
-            self._handle.unref()
+    def stop(self):
+        self.callback = None
+        self.args = None
+
+    def _format(self):
+        return ''
+
+    def __repr__(self):
+        format = self._format()
+        result = "<%s at 0x%x%s" % (self.__class__.__name__, id(self), format)
+        if self.pending:
+            result += " pending"
+        if self.callback is not None:
+            result += " callback=%r" % (self.callback, )
+        if self.args is not None:
+            result += " args=%r" % (self.args, )
+        if self.callback is None and self.args is None:
+            result += " stopped"
+        return result + ">"
+
+    # Note, that __nonzero__ and pending are different
+    # nonzero is used in contexts where we need to know whether to schedule another callback,
+    # so it's true if it's pending or currently running
+    # 'pending' has the same meaning as libev watchers: it is cleared before entering callback
+
+    def __nonzero__(self):
+        # it's nonzero if it's pending or currently executing
+        return self.args is not None
 
 
 class Watcher(object):
@@ -279,52 +319,6 @@ class NoOp(Watcher):
 
     def stop(self):
         pass
-
-
-class Callback(Watcher):
-
-    def __init__(self, loop, ref=True):
-        super(Callback, self).__init__(loop, ref)
-        self._prepare_handle = pyuv.Prepare(self.loop._loop)
-        self._check_handle = pyuv.Check(self.loop._loop)
-
-    def _cb(self, handle):
-        try:
-            self._callback()
-        except:
-            self.loop.handle_error(self, *sys.exc_info())
-        finally:
-            self.stop()
-
-    def _get_ref(self):
-        return self._ref
-    def _set_ref(self, value):
-        self._ref = value
-        for handle in (self._prepare_handle, self._check_handle):
-            if handle:
-                op = handle.ref if value else handle.unref
-                op()
-    ref = property(_get_ref, _set_ref)
-    del _get_ref, _set_ref
-
-    @property
-    def active(self):
-        return (self._prepare_handle and self._prepare_handle.active) or (self._check_handle and self._check_handle.active)
-
-    def start(self, callback, *args):
-        super(Callback, self).start(callback, *args)
-        self.loop._ticker.tick()
-        self._prepare_handle.start(self._cb)
-        self._check_handle.start(self._cb)
-        if not self._ref:
-            self._prepare_handle.unref()
-            self._check_handle.unref()
-
-    def stop(self):
-        self._prepare_handle.stop()
-        self._check_handle.stop()
-        super(Callback, self).stop()
-
 
 class Timer(Watcher):
 

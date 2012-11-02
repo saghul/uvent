@@ -9,17 +9,6 @@ __version__ = '0.2.0'
 
 # Patchers
 
-def patch_sleep():
-    import gevent
-    def sleep(seconds=0, ref=True):
-        hub = gevent.hub.get_hub()
-        loop = hub.loop
-        watcher = loop.timer(max(seconds, 0), ref=ref)
-        hub.wait(watcher)
-    gevent.sleep = sleep
-    gevent.hub.sleep = sleep
-
-
 def patch_loop():
     from .loop import UVLoop
     from gevent.hub import Hub
@@ -30,6 +19,5 @@ def patch_loop():
 
 
 def install():
-    patch_sleep()
     patch_loop()
 
