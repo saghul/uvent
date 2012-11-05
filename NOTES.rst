@@ -48,6 +48,9 @@ reliably return a proper value, False is returned always.
 ev_feed_event
 =============
 
+NOTE: As of gevent 1.0rc1 this no longer applies. I'm keeping it for the record, but now a single
+Prepare watcher is used which calls each registered callback in order.
+
 Gevent implements a 'fake' type of watcher called a 'Callback watcher'. This wathcer is supposed
 to call the given callback as soon as possible. Gevent implements this using a ev_prepare handle
 which is actually never started, but manually fed.
