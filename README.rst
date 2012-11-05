@@ -34,7 +34,7 @@ libev. Implementation notes can be found in the NOTES.rst file.
 Installation
 ============
 
-uvent requires pyuv >= 0.9.0, so right now the only way to get it is
+uvent requires pyuv >= 0.9.1, so right now the only way to get it is
 by installing them straight from GitHub:
 
 ::
@@ -42,7 +42,7 @@ by installing them straight from GitHub:
     pip install git+https://github.com/saghul/pyuv.git
 
 
-**Note:** uvent only works with gevent >= 1.0, earlier versions are not supported.
+**Note:** uvent only works with gevent >= 1.0rc1, earlier versions are not supported.
 
 
 Using it
@@ -55,6 +55,14 @@ of your project, before importing anything from Gevent:
 
     import uvent
     uvent.install()
+
+Another way of doing this without modifying your code is by exporting environment variables before
+running your program:
+
+::
+
+    export GEVENT_LOOP=uvent.loop.UVLoop
+    export GEVENT_RESOLVER=gevent.resolver_thread.Resolver
 
 
 Author
