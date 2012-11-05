@@ -311,7 +311,7 @@ class Watcher(object):
 class NoOp(Watcher):
 
     def __init__(self, loop, ref=True):
-        super(self, NoOp).__init__(loop, ref)
+        super(NoOp, self).__init__(loop, ref)
         self._handle = None
 
     def start(self, *args, **kw):
