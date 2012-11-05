@@ -11,7 +11,7 @@ setup(
     author_email     = 'saghul@gmail.com',
     description      = 'A Gevent core implemented using libuv',
     long_description = open('README.rst', 'r').read(),
-    install_requires = ['pyuv>=0.9.1', 'gevent>=1.0'],
+    #install_requires = ['pyuv>=0.9.1', 'gevent>=1.0'],
     packages         = ['uvent'],
     classifiers      = [
           "Development Status :: 3 - Alpha",
