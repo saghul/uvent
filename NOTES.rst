@@ -100,3 +100,12 @@ Not all functionality in libev has a libuv counterpart. In cases where this happ
 is raised, but so far this has not been very relevant since the missing parts are not actually important
 parts.
 
+
+File objects
+============
+
+Gevent provides a module with a cooperative file implementation: gevent.fileobject. That module contains several
+implementations, a thread based one and a i/o watcher based one. Uvent uses Poll handles as gevent io watchers, but
+Poll handles don't support arbitrary file descriptors on Windows, it only supports sockets. So it's recommended that
+FileObjectThread is used when using uvent.
+
