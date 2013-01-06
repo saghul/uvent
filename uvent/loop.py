@@ -7,6 +7,7 @@ __all__ = ['UVLoop']
 
 import functools
 import os
+import traceback
 import pyuv
 import signal
 import sys
@@ -50,9 +51,8 @@ class UVLoop(object):
             self._default_handle_error(context, type, value, tb)
 
     def _default_handle_error(self, context, type, value, tb):
-        import traceback
         traceback.print_exception(type, value, tb)
-        self.break_(None)
+        # TODO: break out of the event loop
 
     def run(self, nowait=False, once=False):
         self._signal_checker.start()
@@ -73,13 +73,7 @@ class UVLoop(object):
         raise NotImplementedError
 
     def break_(self, how):
-        # TODO: replace with uv_break when available
-        def cb(handle):
-            try:
-                handle.close()
-            except Exception:
-                pass
-        self._loop.walk(cb)
+        raise NotImplementedError
 
     def verify(self):
         pass
