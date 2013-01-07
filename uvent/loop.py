@@ -57,11 +57,12 @@ class UVLoop(object):
     def run(self, nowait=False, once=False):
         self._signal_checker.start()
         if nowait:
-            raise RuntimeError('nowait is not supported')
-        if once:
-            self._loop.run_once()
+            mode = pyuv.UV_RUN_NOWAIT
+        elif once:
+            mode = pyuv.UV_RUN_ONCE
         else:
-            self._loop.run()
+            mode = pyuv.UV_RUN_DEFAULT
+        self._loop.run(mode)
 
     def reinit(self):
         pass
