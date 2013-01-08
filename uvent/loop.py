@@ -5,12 +5,37 @@
 
 __all__ = ['UVLoop']
 
+import atexit
 import functools
 import os
 import traceback
 import pyuv
 import signal
 import sys
+
+from .util import set_nonblocking, close_fd
+
+
+if hasattr(signal, 'set_wakeup_fd') and os.name == 'posix':
+    rfd, wfd = os.pipe()
+    set_nonblocking(rfd)
+    set_nonblocking(wfd)
+    try:
+        old_wakeup_fd = signal.set_wakeup_fd(wfd)
+        if old_wakeup_fd != -1:
+            signal.set_wakeup_fd(old_wakeup_fd)
+            close_fd(rfd)
+            close_fd(wfd)
+        else:
+            _signal_check_rfd, _signal_check_wfd = rfd, wfd
+            atexit.register(close_fd, rfd)
+            atexit.register(close_fd, wfd)
+    except ValueError:
+        _signal_check_rfd, _signal_check_wfd = None, None
+        close_fd(rfd)
+        close_fd(wfd)
+else:
+    _signal_check_rfd, _signal_check_wfd = None, None
 
 
 class UVLoop(object):
@@ -24,11 +49,16 @@ class UVLoop(object):
             self._loop = pyuv.Loop()
         self._loop.excepthook = functools.partial(self.handle_error, None)
         self._callback_watcher = pyuv.Prepare(self._loop)
+        self._callback_spinner = pyuv.Idle(self._loop)
         self._callbacks = []
         self._child_watchers = {}
         self._watchers = set()
         self._sigchld_handle = None
-        self._signal_checker = pyuv.SignalChecker(self._loop)
+        if _signal_check_rfd is not None:
+            self._signal_checker = pyuv.util.SignalChecker(self._loop, _signal_check_rfd)
+            self._signal_checker.start()
+        else:
+            self._signal_checker = None
 
     def destroy(self):
         self._watchers.clear()
@@ -55,7 +85,6 @@ class UVLoop(object):
         # TODO: break out of the event loop
 
     def run(self, nowait=False, once=False):
-        self._signal_checker.start()
         if nowait:
             mode = pyuv.UV_RUN_NOWAIT
         elif once:
@@ -171,7 +200,8 @@ class UVLoop(object):
         raise NotImplementedError
 
     def _run_callbacks(self, h):
-        while self._callbacks:
+        count = 1000
+        while self._callbacks and count > 0:
             callbacks, self._callbacks = self._callbacks, []
             for cb in callbacks:
                 if None in (cb.callback, cb.args):
@@ -181,7 +211,12 @@ class UVLoop(object):
                 finally:
                     cb.callback = None
                     cb.args = None
-        self._callback_watcher.stop()
+                count -= 1
+        if self._callbacks:
+            # Start a Idle handle, which will force the loop not to block for io in the next iteration
+            self._callback_spinner.start(lambda h: h.stop())
+        else:
+            self._callback_watcher.stop()
 
     def _handle_SIGCHLD(self, handle, signum):
         pid, status, usage = os.wait3(os.WNOHANG)
