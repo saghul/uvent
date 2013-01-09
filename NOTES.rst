@@ -109,3 +109,12 @@ implementations, a thread based one and a i/o watcher based one. Uvent uses Poll
 Poll handles don't support arbitrary file descriptors on Windows, it only supports sockets. So it's recommended that
 FileObjectThread is used when using uvent.
 
+
+Problem with Poll handles
+=========================
+
+Since the libev removal from libuv, only one Poll handle can be instantiated for a given fd. If more than one Poll handle
+is created a segfault will occur. Since the gevent socket creates 2 'io' watchers (which use a Poll handle internally) some
+kind of refcounting would be necessary to avoid creating more than one Poll handle for a given fd. Another solution would be
+to implement our own socket module.
+
