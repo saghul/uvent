@@ -20,6 +20,13 @@ additions:
 Source code for uvent is on `GitHub <http://github.com/saghul/uvent>`_.
 
 
+Important Note
+==============
+
+There is a critical problem regarding socket handling due to some changes in libuv, check
+NOTES.rst for more information.
+
+
 Motivation
 ==========
 
