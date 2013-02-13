@@ -13,7 +13,7 @@ import pyuv
 import signal
 import sys
 
-from .util import set_nonblocking, close_fd
+from .util import set_nonblocking, close_fd, SharedPoll
 
 
 if hasattr(signal, 'set_wakeup_fd') and os.name == 'posix':
@@ -47,6 +47,7 @@ class UVLoop(object):
             self._loop = pyuv.Loop.default_loop()
         else:
             self._loop = pyuv.Loop()
+        self._loop._poll_handles = {}
         self._loop.excepthook = functools.partial(self.handle_error, None)
         self._callback_watcher = pyuv.Prepare(self._loop)
         self._callback_spinner = pyuv.Idle(self._loop)
@@ -457,7 +458,7 @@ class Io(Watcher):
         super(Io, self).__init__(loop, ref)
         self._fd = fd
         self._events = self._ev2uv(events)
-        self._handle = pyuv.Poll(self.loop._loop, self._fd)
+        self._handle = SharedPoll(self.loop._loop, self._fd)
 
     @classmethod
     def _ev2uv(cls, events):
@@ -468,10 +469,7 @@ class Io(Watcher):
             uv_events |= pyuv.UV_WRITABLE
         return uv_events
 
-    def _poll_cb(self, handle, events, error):
-        if error is not None:
-            self._handle.stop()
-            return
+    def _poll_cb(self):
         try:
             self._callback()
         except:
@@ -491,14 +489,10 @@ class Io(Watcher):
         self._handle.stop()
         super(Io, self).stop()
 
-    def _get_fd(self):
+    @property
+    def fd(self):
+        # TODO: changing the fd is not currently supported
         return self._fd
-    def _set_fd(self, value):
-        self._fd = value
-        self._handle.stop()
-        self._handle = pyuv.Poll(self.loop._loop, self._fd)
-    fd = property(_get_fd, _set_fd)
-    del _get_fd, _set_fd
 
     def _get_events(self):
         return self._events
@@ -656,5 +650,4 @@ class Stat(Watcher):
     def stop(self):
         self._handle.stop()
         super(Stat, self).stop()
-
 
