@@ -185,6 +185,7 @@ class UVLoop(object):
         if self._loop.default and self._sigchld_handle is None:
             self._sigchld_handle = pyuv.Signal(self._loop)
             self._sigchld_handle.start(self._handle_SIGCHLD, signal.SIGCHLD)
+            self._sigchld_handle.unref()
 
     def signal(self, signum, ref=True, priority=None):
         return Signal(self, signum, ref)
@@ -349,6 +350,7 @@ class NoOp(Watcher):
 
     def stop(self):
         pass
+
 
 class Timer(Watcher):
 
