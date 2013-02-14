@@ -73,6 +73,8 @@ matter the value.
 The problem with this behavior was acknowledged by the author of gevent and will probably be fixed
 at some point. When that happens uvent will no longer need to patch the sleep function.
 
+**UPDATE:** This was fixed in gevent, so uvent no longer patches sleep function.
+
 
 DNS
 ===
