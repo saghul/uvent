@@ -116,5 +116,5 @@ Problem with Poll handles
 Since the libev removal from libuv, only one Poll handle can be instantiated for a given fd. If more than one Poll handle
 is created a segfault will occur. Since the gevent socket creates 2 'io' watchers (which use a Poll handle internally) some
 kind of refcounting would be necessary to avoid creating more than one Poll handle for a given fd. Another solution would be
-to implement our own socket module.
+to implement our own socket module. **UPDATE:** This has been fixed with the inclusion of the SharedPoll pseudo-handle. 
 
