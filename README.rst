@@ -20,13 +20,6 @@ additions:
 Source code for uvent is on `GitHub <http://github.com/saghul/uvent>`_.
 
 
-Important Note
-==============
-
-There is a critical problem regarding socket handling due to some changes in libuv, check
-NOTES.rst for more information.
-
-
 Motivation
 ==========
 
@@ -41,7 +34,7 @@ libev. Implementation notes can be found in the NOTES.rst file.
 Installation
 ============
 
-uvent requires pyuv >= 0.9.1, so right now the only way to get it is
+uvent requires pyuv master, so right now the only way to get it is
 by installing them straight from GitHub:
 
 ::
