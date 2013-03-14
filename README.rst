@@ -34,12 +34,11 @@ libev. Implementation notes can be found in the NOTES.rst file.
 Installation
 ============
 
-uvent requires pyuv master, so right now the only way to get it is
-by installing them straight from GitHub:
+uvent requires pyuv >= 0.10.0
 
 ::
 
-    pip install git+https://github.com/saghul/pyuv.git
+    pip install -U pyuv
 
 
 **Note:** uvent only works with gevent >= 1.0rc1, earlier versions are not supported.

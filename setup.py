@@ -11,7 +11,7 @@ setup(
     author_email     = 'saghul@gmail.com',
     description      = 'A Gevent core implemented using libuv',
     long_description = open('README.rst', 'r').read(),
-    #install_requires = ['pyuv>=0.9.1', 'gevent>=1.0'],
+    #install_requires = ['pyuv>=0.10.0', 'gevent>=1.0'],
     packages         = ['uvent'],
     classifiers      = [
           "Development Status :: 3 - Alpha",
@@ -20,10 +20,8 @@ setup(
           "Programming Language :: Python",
           "Programming Language :: Python :: 2.6",
           "Programming Language :: Python :: 2.7",
-          "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.0",
-          "Programming Language :: Python :: 3.1",
-          "Programming Language :: Python :: 3.2"
+          #"Programming Language :: Python :: 3",
+          #"Programming Language :: Python :: 3.2"
     ]
 )
 
