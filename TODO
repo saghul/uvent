@@ -1,4 +1,3 @@
 
 - Use UDP and TCP handles in socket/ssl ?
-- Fix usage of multiple Poll handles for a single fd
 
